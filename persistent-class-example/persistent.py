@@ -9,7 +9,7 @@ class Persistent:
         Args:
             data_id (str): Unique identifier for the data to be stored.
         """
-        self.__dict__['data_id'] = data_id
+        self.__dict__['data_id'] = str(data_id)
         if not self._load():
             self._init()
             self._save()
@@ -21,7 +21,7 @@ class Persistent:
 
     def _load(self):
         """Loads the data."""
-        db = shelve.open('./data/' + str(self.__class__.__name__))
+        db = shelve.open('./saves/' + str(self.__class__.__name__))
         if str(self.data_id) in db:
             self.__dict__.update(db[self.data_id].__dict__)
             db.close()
@@ -32,7 +32,7 @@ class Persistent:
 
     def _save(self):
         """Saves the data."""
-        db = shelve.open('./data/' + str(self.__class__.__name__))
+        db = shelve.open('./saves/' + str(self.__class__.__name__))
         db[self.data_id] = self
         db.close()
 

@@ -4,9 +4,8 @@
 
 # Custom modules
 from .persistent import Persistent
-from custom.config import channel
-import constants.status as status
-import constants.common as common
+import custom.config as conf
+import constants.state as state
 import data.mydb_buffer as mydb_buffer
 import data.mydb_scheduler as mydb_scheduler
 import data.mydb_summary as mydb_summary
@@ -22,9 +21,9 @@ class User(Persistent):
         # User parameters
         self.channel = 0
         self.channels = []
-        self.status = status.DEFAULT
-        self.service = status.DEFAULT
-        self.text = common.EMPTY
+        self.status = state.DEFAULT
+        self.service = state.DEFAULT
+        self.text = ''
 
         # User options
         self.multi_channel = False
@@ -40,7 +39,7 @@ class User(Persistent):
 
     def next_channel(self):
         self.channel += 1
-        if self.channel >= channel.NUMBER:
+        if self.channel >= conf.channel.NUMBER:
             self.channel = 0
         return self.channel
 
@@ -54,9 +53,9 @@ class User(Persistent):
         return self.channels
 
     def clear_status(self):
-        self.status = status.DEFAULT
-        self.service = status.DEFAULT
-        self.text = common.EMPTY
+        self.status = state.DEFAULT
+        self.service = state.DEFAULT
+        self.text = ''
 
     def clear_channels(self):
         self.channels = []
@@ -85,60 +84,98 @@ class User(Persistent):
             self.amazon_refurbish = value
         return self.amazon_refurbish
 
-    def custom_footer(self, channel):
+    def custom_footer(self, channel=None):
+        if channel is None:
+            channel = self.channel
         if channel not in self._custom_footer:
-            self._custom_footer[channel] = common.EMPTY
+            self._custom_footer[channel] = ''
+            self._save()
         return self._custom_footer[channel]
 
-    def write_custom_footer(self, channel, footer):
+    def write_custom_footer(self, footer, channel=None):
+        if channel is None:
+            channel = self.channel
         self._custom_footer[channel] = footer
+        ''
 
-    def message_buttons(self, channel):
+    def message_buttons(self, channel=None):
+        if channel is None:
+            channel = self.channel
         if channel not in self._message_buttons:
             self._message_buttons[channel] = False
+            self._save()
         return self._message_buttons[channel]
 
-    def change_message_buttons(self, channel, value=None):
+    def change_message_buttons(self, channel=None, value=None):
+        if channel is None:
+            channel = self.channel
+        if channel not in self._message_buttons:
+            self._message_buttons[channel] = False
         if value is None:
             self._message_buttons[channel] = not self._message_buttons[channel]
         else:
             self._message_buttons[channel] = value
+        self._save()
         return self._message_buttons[channel]
 
-    def custom_image(self, channel):
+    def custom_image(self, channel=None):
+        if channel is None:
+            channel = self.channel
         if channel not in self._custom_image:
             self._custom_image[channel] = False
+            self._save()
         return self._custom_image[channel]
 
-    def change_custom_image(self, channel, value=None):
+    def change_custom_image(self, channel=None, value=None):
+        if channel is None:
+            channel = self.channel
+        if channel not in self._custom_image:
+            self._custom_image[channel] = False
         if value is None:
             self._custom_image[channel] = not self._custom_image[channel]
         else:
             self._custom_image[channel] = value
+        self._save()
         return self._custom_image[channel]
 
-    def shorten_URL(self, channel):
+    def shorten_URL(self, channel=None):
+        if channel is None:
+            channel = self.channel
         if channel not in self._shorten_URL:
             self._shorten_URL[channel] = False
+            self._save()
         return self._shorten_URL[channel]
 
-    def change_shorten_URL(self, channel, value=None):
+    def change_shorten_URL(self, channel=None, value=None):
+        if channel is None:
+            channel = self.channel
+        if channel not in self._shorten_URL:
+            self._shorten_URL[channel] = False
         if value is None:
             self._shorten_URL[channel] = not self._shorten_URL[channel]
         else:
             self._shorten_URL[channel] = value
+        self._save()
         return self._shorten_URL[channel]
 
-    def create_affiliate(self, channel):
+    def create_affiliate(self, channel=None):
+        if channel is None:
+            channel = self.channel
         if channel not in self._create_affiliate:
             self._create_affiliate[channel] = False
+            self._save()
         return self._create_affiliate[channel]
 
-    def change_create_affiliate(self, channel, value=None):
+    def change_create_affiliate(self, channel=None, value=None):
+        if channel is None:
+            channel = self.channel
+        if channel not in self._create_affiliate:
+            self._create_affiliate[channel] = False
         if value is None:
             self._create_affiliate[channel] = not self._create_affiliate[channel]
         else:
             self._create_affiliate[channel] = value
+        self._save()
         return self._create_affiliate[channel]
 
 
@@ -146,26 +183,29 @@ class Store(Persistent):
     """Class with the information to create the message. Init with user id."""
     def _init(self):
         # Common parameters for all channels
-        self.post = common.EMPTY
-        self.title = common.EMPTY
-        self.image = common.EMPTY
-        self.coupon_price = common.EMPTY
-        self.coupon = common.EMPTY
-        self.current_price = common.EMPTY
-        self.flash_price = common.EMPTY
-        self.day_price = common.EMPTY
-        self.pvp = common.EMPTY
-        self.original_url = common.EMPTY
-        self.description = common.EMPTY
-        self.header = common.EMPTY
-        self.footer = common.EMPTY
-        self.service = common.EMPTY
-        self.buttons = common.EMPTY
+        self.user_id = self.data_id
+        self.post = ''
+        self.title = ''
+        self.image = ''
+        self.coupon_price = ''
+        self.coupon = ''
+        self.current_price = ''
+        self.flash_price = ''
+        self.day_price = ''
+        self.pvp = ''
+        self.original_url = ''
+        self.original_refurbish_url = ''
+        self.description = ''
+        self.header = ''
+        self.footer = ''
+        self.service = ''
+        self.buttons = ''
         self.refurbish_price_list = []
         self.refurbish_status_list = []
-        self.refurbish_price = common.EMPTY
-        self.refurbish_status = common.EMPTY
-        self.customer_reviews = None
+        self.refurbish_price = ''
+        self.refurbish_status = ''
+        self.reviews_number = None
+        self.reviews_score = None
         self.edited = False
 
         # Parameters specific for each channel
@@ -175,48 +215,131 @@ class Store(Persistent):
         self._refurbish_url = {}
         self._refurbish_short_url = {}
 
+    def _channel(self):
+        user = User(self.user_id)
+        return user.channel
+
     def clear(self):
         self._init()
 
-    def custom_image(self, channel):
+    def custom_image(self, channel=None):
+        if channel is None:
+            channel = self._channel()
         if channel not in self._custom_image:
-            self._custom_image[channel] = common.EMPTY
+            self._custom_image[channel] = ''
+            self._save()
         return self._custom_image[channel]
 
-    def write_custom_image(self, channel, custom_image):
+    def write_custom_image(self, custom_image, channel=None):
+        if channel is None:
+            channel = self._channel()
         self._custom_image[channel] = custom_image
+        self._save()
 
-    def long_url(self, channel):
+    def clear_custom_image(self):
+        self._custom_image = {}
+
+    def different_long_url(self):
+        result = False
+        url = self.long_url(0)
+        for channel in range(conf.channel.NUMBER):
+            if url != self.long_url(channel):
+                result = True
+                break
+        return result
+
+    def long_url(self, channel=None):
+        if channel is None:
+            channel = self._channel()
         if channel not in self._long_url:
-            self._long_url[channel] = common.EMPTY
+            self._long_url[channel] = ''
+            self._save()
         return self._long_url[channel]
 
-    def write_long_url(self, channel, long_url):
+    def write_long_url(self, long_url, channel=None):
+        if channel is None:
+            channel = self._channel()
         self._long_url[channel] = long_url
+        self._save()
 
-    def short_url(self, channel):
+    def write_all_long_url(self, long_url):
+        for channel in range(conf.channel.NUMBER):
+            self.write_long_url(channel, long_url)
+
+    def clear_long_url(self):
+        self._long_url = {}
+
+    def short_url(self, channel=None):
+        if channel is None:
+            channel = self._channel()
         if channel not in self._short_url:
-            self._short_url[channel] = common.EMPTY
+            self._short_url[channel] = ''
+            self._save()
         return self._short_url[channel]
 
-    def write_short_url(self, channel, short_url):
+    def write_short_url(self, short_url, channel=None):
+        if channel is None:
+            channel = self._channel()
         self._short_url[channel] = short_url
+        self._save()
 
-    def refurbish_url(self, channel):
+    def write_all_short_url(self, short_url):
+        for channel in range(conf.channel.NUMBER):
+            self.write_short_url(channel, short_url)
+
+    def clear_short_url(self):
+        self._short_url = {}
+
+    def different_refurbish_url(self):
+        result = False
+        url = self.refurbish_url(0)
+        for channel in range(conf.channel.NUMBER):
+            if url != self.refurbish_url(channel):
+                result = True
+                break
+        return result
+
+    def refurbish_url(self, channel=None):
+        if channel is None:
+            channel = self._channel()
         if channel not in self._refurbish_url:
-            self._refurbish_url[channel] = common.EMPTY
+            self._refurbish_url[channel] = ''
+            self._save()
         return self._refurbish_url[channel]
 
-    def write_refurbish_url(self, channel, refurbish_url):
+    def write_refurbish_url(self, refurbish_url, channel=None):
+        if channel is None:
+            channel = self._channel()
         self._refurbish_url[channel] = refurbish_url
+        self._save()
 
-    def refurbish_short_url(self, channel):
+    def write_all_refurbish_url(self, refurbish_url):
+        for channel in range(conf.channel.NUMBER):
+            self.write_refurbish_url(channel, refurbish_url)
+
+    def clear_refurbish_url(self):
+        self._refurbish_url = {}
+
+    def refurbish_short_url(self, channel=None):
+        if channel is None:
+            channel = self._channel()
         if channel not in self._refurbish_short_url:
-            self._refurbish_short_url[channel] = common.EMPTY
+            self._refurbish_short_url[channel] = ''
+            self._save()
         return self._refurbish_short_url[channel]
 
-    def write_refurbish_short_url(self, channel, refurbish_short_url):
+    def write_refurbish_short_url(self, refurbish_short_url, channel=None):
+        if channel is None:
+            channel = self._channel()
         self._refurbish_short_url[channel] = refurbish_short_url
+        self._save()
+
+    def write_all_refurbish_short_url(self, refurbish_short_url):
+        for channel in range(conf.channel.NUMBER):
+            self.write_refurbish_short_url(channel, refurbish_short_url)
+
+    def clear_refurbish_short_url(self):
+        self._refurbish_short_url = {}
 
     def flash_code(self):
         if self.coupon_price:
@@ -243,16 +366,19 @@ class System(Persistent):
     def write_last_post(self, channel, post_id):
         self._last_post[channel] = ('https://t.me/' + channel.ALIAS[channel].replace('@', '')
                                     + '/' + str(post_id))
+        self._save()
         return self._last_post[channel]
 
     def last_post(self, channel):
         if channel not in self._last_post:
             self._last_post[channel] = 'https://t.me/' + channel.ALIAS[channel].replace('@', '')
+            self._save()
         return self._last_post[channel]
 
     def add_proxy(self, proxy):
-        self.proxies.add(proxy)
-        self._save()
+        if proxy not in self.proxies:
+            self.proxies.add(proxy)
+            self._save()
 
     def get_proxy(self):
         return random.choice(list(self.proxies))
@@ -265,9 +391,13 @@ class System(Persistent):
     def clear_proxies(self):
         self.proxies = set()
 
+    def count_proxies(self):
+        return len(self.proxies)
+
     def buffer_status(self, channel):
         if channel not in self._buffer_status:
             self._buffer_status[channel] = True
+            self._save()
         return self._buffer_status[channel]
 
     def change_buffer_status(self, channel, value=None):
@@ -275,34 +405,49 @@ class System(Persistent):
             self._buffer_status[channel] = not self._buffer_status[channel]
         else:
             self._buffer_status[channel] = value
+        self._save()
         return self._buffer_status[channel]
 
     def buffer_time(self, channel):
         if channel not in self._buffer_time:
             self._buffer_time[channel] = 30
+            self._save()
         return self._buffer_time[channel]
 
     def write_buffer_time(self, channel, value):
         self._buffer_time[channel] = value
+        self._save()
 
     def buffer_counter(self, channel):
         if channel not in self._buffer_counter:
             self._buffer_counter[channel] = 0
+            self._save()
         return self._buffer_counter[channel]
 
     def write_buffer_counter(self, channel, value):
         self._buffer_counter[channel] = value
+        self._save()
+
+    def increase_buffer_counter(self, channel):
+        self._buffer_counter[channel] += 1
+        self._save()
+
+    def reset_buffer_counter(self, channel):
+        self._buffer_counter[channel] = 0
+        self._save()
 
     def scheduled_status(self, channel):
         if channel not in self._scheduled_status:
             self._scheduled_status[channel] = True
+            self._save()
         return self._scheduled_status[channel]
 
-    def write_scheduled_status(self, channel, value=None):
+    def change_scheduled_status(self, channel, value=None):
         if value is None:
             self._scheduled_status[channel] = not self._scheduled_status[channel]
         else:
             self._scheduled_status[channel] = value
+        self._save()
         return self._scheduled_status[channel]
 
 
@@ -318,27 +463,30 @@ class Affiliate(Persistent):
     def _init_affiliate(self, service, channel):
         if service not in self._front_affiliate:
             self._front_affiliate[service] = {}
-        elif channel not in self._front_affiliate[service]:
-            self._front_affiliate[service][channel] = common.EMPTY
-        if service not in self.rear_affiliate:
+        if channel not in self._front_affiliate[service]:
+            self._front_affiliate[service][channel] = conf.affiliate[service][0]
+        if service not in self._rear_affiliate:
             self._rear_affiliate[service] = {}
-        elif channel not in self._rear_affiliate[service]:
-            self._rear_affiliate[service][channel] = common.EMPTY
+        if channel not in self._rear_affiliate[service]:
+            self._rear_affiliate[service][channel] = conf.affiliate[service][1]
+        self._save()
 
     def write_front_affiliate(self, service, channel, affiliate):
-        self._init(service)
+        self._init_affiliate(service, channel)
         self._front_affiliate[service][channel] = affiliate
+        self._save()
 
     def write_rear_affiliate(self, service, channel, affiliate):
-        self._init(service)
+        self._init_affiliate(service, channel)
         self._rear_affiliate[service][channel] = affiliate
+        self._save()
 
     def front_affiliate(self, service, channel):
-        self._init(service)
+        self._init_affiliate(service, channel)
         return self._front_affiliate[service][channel]
 
     def rear_affiliate(self, service, channel):
-        self._init(service)
+        self._init_affiliate(service, channel)
         return self._rear_affiliate[service][channel]
 
 
@@ -419,10 +567,10 @@ class Buffer(Loader):
         self._raw = mydb_buffer.read(self.channel)
         self._init()
 
-    def add(self, store):
-        status = mydb_buffer.add(self.channel, store.post, store.service, store.title,
-                                 store.long_url, store.short_url, store.current_price,
-                                 store.pvp, store.flash_code(), store.buttons)
+    def add(self, data):
+        status = mydb_buffer.add(self.channel, data.post, data.service, data.title,
+                                 data.long_url, data.short_url, data.current_price,
+                                 data.pvp, data.flash_code(), data.buttons)
         self._refresh(status)
         return status
 
@@ -442,6 +590,9 @@ class Buffer(Loader):
             status = False
         return status
 
+    def flash_code(self):
+        return self._flash_code
+
     def _load(self, number):
         self.id_number = self._raw['id_number'][number]
         self.post = self._raw['post'][number]
@@ -451,7 +602,7 @@ class Buffer(Loader):
         self.short_url = self._raw['short_url'][number]
         self.current_price = self._raw['current_price'][number]
         self.pvp = self._raw['pvp'][number]
-        self.flash_code = self._raw['flash_code'][number]
+        self._flash_code = self._raw['flash_code'][number]
         self.buttons = self._raw['buttons'][number]
 
 
@@ -462,11 +613,11 @@ class Scheduled(Loader):
         self._raw = mydb_scheduler.read(self.channel)
         self._init()
 
-    def add(self, store, year, month, day, hour, minute):
-        status = mydb_scheduler.add(self.channel, store.post, store.service, year, month, day, hour,
-                                    minute, store.title, store.long_url, store.short_url,
-                                    store.current_price, store.pvp, store.flash_code(),
-                                    store.buttons)
+    def add(self, data, year, month, day, hour, minute):
+        status = mydb_scheduler.add(self.channel, data.post, data.service, year, month, day, hour,
+                                    minute, data.title, data.long_url, data.short_url,
+                                    data.current_price, data.pvp, data.flash_code(),
+                                    data.buttons)
         self._refresh(status)
         return status
 
@@ -493,6 +644,9 @@ class Scheduled(Loader):
             status = False
         return status
 
+    def flash_code(self):
+        return self._flash_code
+
     def _load(self, number):
         self.id_number = self._raw['id_number'][number]
         self.post = self._raw['post'][number]
@@ -507,7 +661,7 @@ class Scheduled(Loader):
         self.short_url = self._raw['short_url'][number]
         self.current_price = self._raw['current_price'][number]
         self.pvp = self._raw['pvp'][number]
-        self.flash_code = self._raw['flash_code'][number]
+        self._flash_code = self._raw['flash_code'][number]
         self.buttons = self._raw['buttons'][number]
 
 
@@ -524,19 +678,19 @@ class Summary(Loader):
             self._raw = mydb_summary.read_month(self.channel)
         self._init()
 
-    def add(self, store, post_id):
+    def add(self, data, post_id):
         year = time.localtime().tm_year
         month = time.localtime().tm_mon
         day = time.localtime().tm_mday
         hour = time.localtime().tm_hour
         minute = time.localtime().tm_min
 
-        post_url = ('https://t.me/' + channel.ALIAS[self.channel].replace('@', '') + '/'
+        post_url = ('https://t.me/' + conf.channel.ALIAS[self.channel].replace('@', '') + '/'
                     + str(post_id))
 
-        status = mydb_summary.add(self.channel, year, month, day, hour, minute, store.title,
-                                  post_url, store.long_url, store.short_url, store.current_price,
-                                  store.pvp, store.flash_code())
+        status = mydb_summary.add(self.channel, year, month, day, hour, minute, data.title,
+                                  post_url, data.long_url, data.short_url, data.current_price,
+                                  data.pvp, data.flash_code())
         self._refresh(status)
         return status
 
@@ -548,6 +702,9 @@ class Summary(Loader):
 
     def read_month(self):
         self.__init__(self.channel, 'month')
+
+    def flash_code(self):
+        return self._flash_code
 
     def _load(self, number):
         self.id_number = self._raw['id_number'][number]
@@ -562,4 +719,4 @@ class Summary(Loader):
         self.short_url = self._raw['short_url'][number]
         self.current_price = self._raw['current_price'][number]
         self.pvp = self._raw['pvp'][number]
-        self.flash_code = self._raw['flash_code'][number]
+        self._flash_code = self._raw['flash_code'][number]
